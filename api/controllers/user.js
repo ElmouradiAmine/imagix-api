@@ -114,7 +114,7 @@ module.exports.register = async (req, res, next) => {
 
   //Check if the email exists
   const userExist = await User.findOne({ email: req.body.email });
-  if (userExist) return res.status(400).send({ error: "Email already in use" });
+  if (userExist) return res.status(400).send({ error: "EmailAlreadyInUse" });
 
   //Hash the password
   const salt = await bcrypt.genSalt(10);
