@@ -22,5 +22,15 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
+  },
+  "apidoc": {
+    "name": "imagix-api",
+    "description": "A basic api for the imagix media social network.",
+    "template" : {
+      "forceLanguage": "en"
+    },
+    "version":  "0.1.0",
+    "title": "Imagix - Api",
+    "url" : "localhost:3000/api/v1"
   }
 }
