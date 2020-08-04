@@ -54,7 +54,7 @@ module.exports.login = async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email });
   if (!user) res.status(401).send({ error: "WrongCredentiels" });
   const validPassword = await bcrypt.compare(req.body.password, user.password);
-  if (!validPassword) res.status(401).send({ error: "WrongCredentiels" });
+  if (!validPassword) return res.status(401).send({ error: "WrongCredentiels" });
 
   //Generate a token
   const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
@@ -137,4 +137,38 @@ module.exports.register = async (req, res, next) => {
   } catch (error) {
     res.status(500).send(error);
   }
+};
+
+module.exports.update_user = async (req, res, next) => {
+  //the user id param
+  const id = req.params.userId;
+  //validate data
+  const { error } = validation.updateValidation(req.body);
+  if (error) return res.status(400).send({ error: error.details[0].message });
+
+  //Check if the user exists
+  const userExist = await User.findOne({ _id: id });
+  if (!userExist) return res.status(400).send({ error: "UserNotFound" });
+
+  //Check if the user is allowed to change his password
+  if (req.user._id !== id)
+    return res.status(401).send({ error: "AccessDenied" });
+
+  const { password, username } = req.body;
+  const options = {};
+  //Check if the password is provided
+  if (password) {
+    //Hash the password
+    const salt = await bcrypt.genSalt(10);
+    const hashPassword = await bcrypt.hash(password, salt);
+    options.password = hashPassword;
+  }
+  //Check if the username is provided
+  if (username) {
+    options.username = username;
+  }
+  try {
+    await User.updateOne({ _id: id }, { $set: options });
+    res.status(204).send();
+  } catch (error) {}
 };

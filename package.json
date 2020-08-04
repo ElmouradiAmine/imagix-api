@@ -32,6 +32,6 @@
     },
     "version":  "0.1.0",
     "title": "Imagix - Api",
-    "url" : "localhost:3000/api/v1"
+    "url" : "https://imagix-api.herokuapp.com/api/v1"
   }
 }
