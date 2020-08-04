@@ -54,7 +54,8 @@ module.exports.login = async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email });
   if (!user) res.status(401).send({ error: "WrongCredentiels" });
   const validPassword = await bcrypt.compare(req.body.password, user.password);
-  if (!validPassword) return res.status(401).send({ error: "WrongCredentiels" });
+  if (!validPassword)
+    return res.status(401).send({ error: "WrongCredentiels" });
 
   //Generate a token
   const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
@@ -171,4 +172,19 @@ module.exports.update_user = async (req, res, next) => {
     await User.updateOne({ _id: id }, { $set: options });
     res.status(204).send();
   } catch (error) {}
+};
+
+module.exports.get_user = async (req, res, next) => {
+  //the user id param
+  const id = req.params.userId;
+  //Check if the user exists
+  const userFound = await User.findOne({ _id: id }).select("username email createdAt");
+  if (!userFound) return res.status(400).send({ error: "UserNotFound" });
+
+   //Check if the user is allowed to get his profile info
+   if (req.user._id !== id)
+   return res.status(401).send({ error: "AccessDenied" });
+
+   res.send(userFound);
+
 };
