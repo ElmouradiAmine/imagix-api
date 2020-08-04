@@ -19,7 +19,8 @@
     "joi": "^17.1.1",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.9.27",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "nodemailer": "^6.4.11"
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
@@ -27,11 +28,11 @@
   "apidoc": {
     "name": "imagix-api",
     "description": "A basic api for the imagix media social network.",
-    "template" : {
+    "template": {
       "forceLanguage": "en"
     },
-    "version":  "0.1.0",
+    "version": "0.1.0",
     "title": "Imagix - Api",
-    "url" : "https://imagix-api.herokuapp.com/api/v1"
+    "url": "https://imagix-api.herokuapp.com/api/v1"
   }
 }

@@ -2,6 +2,7 @@ const User = require("../models/User");
 const validation = require("../utils/validation");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 
 /**
  * @api {post} /user/login Login the user and send back the token.
@@ -56,6 +57,9 @@ module.exports.login = async (req, res, next) => {
   const validPassword = await bcrypt.compare(req.body.password, user.password);
   if (!validPassword)
     return res.status(401).send({ error: "WrongCredentiels" });
+
+  //Check if the account is activated
+  if(!user.isActivated) return res.status(400).send({ error: "AccountNotActivated" });
 
   //Generate a token
   const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
@@ -115,7 +119,10 @@ module.exports.register = async (req, res, next) => {
 
   //Check if the email exists
   const userExist = await User.findOne({ email: req.body.email });
-  if (userExist) return res.status(400).send({ error: "EmailAlreadyInUse" });
+  if (userExist && userExist.isActivated)
+    return res.status(400).send({ error: "EmailAlreadyInUse" });
+  else if (userExist)
+    return res.status(400).send({ error: "AccountNotActivated" });
 
   //Hash the password
   const salt = await bcrypt.genSalt(10);
@@ -132,6 +139,38 @@ module.exports.register = async (req, res, next) => {
 
     //Save the user to the database.
     const createdUser = await user.save();
+
+    //send the activation email
+    //Generate a token
+    const token = jwt.sign(
+      { email: createdUser.email },
+      process.env.TOKEN_SECRET,{
+        expiresIn: 60 * 5,
+      }
+    );
+    let transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.PASSWORD,
+        
+      },
+    });
+
+    let mailOptions = {
+      from: process.env.EMAIL,
+      to: createdUser.email,
+      subject: "Activate your Imagix account",
+      html: `<div>
+      <p>Thank you for registering into Imagix</p> 
+      <a href= "http://localhost:3000/api/v1/user/activate/${token}">Activation Link</a></div>`,
+    };
+
+    transporter.sendMail(mailOptions, (err, info) => {
+      if (err) console.log(err);
+      else console.log(info.response);
+    });
+
     res.send({
       user: createdUser._id,
     });
@@ -178,13 +217,34 @@ module.exports.get_user = async (req, res, next) => {
   //the user id param
   const id = req.params.userId;
   //Check if the user exists
-  const userFound = await User.findOne({ _id: id }).select("username email createdAt");
+  const userFound = await User.findOne({ _id: id }).select(
+    "username email createdAt"
+  );
   if (!userFound) return res.status(400).send({ error: "UserNotFound" });
 
-   //Check if the user is allowed to get his profile info
-   if (req.user._id !== id)
-   return res.status(401).send({ error: "AccessDenied" });
+  //Check if the user is allowed to get his profile info
+  if (req.user._id !== id)
+    return res.status(401).send({ error: "AccessDenied" });
 
-   res.send(userFound);
-
+  res.send(userFound);
 };
+
+
+module.exports.activate_user = async (req, res, next) => {
+  const token = req.params.token;
+  if (!token) return res.status(401).send({
+    error: "AccessDenied"
+});
+
+try {
+  const verified = jwt.verify(token,process.env.TOKEN_SECRET);
+  await User.updateOne({email: verified.email}, {$set: {isActivated: true}});
+  res.status(204);
+
+} catch (error){
+  return res.status(400).send({
+      error: error
+  })
+}
+  
+}
