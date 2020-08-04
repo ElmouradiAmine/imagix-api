@@ -31,7 +31,7 @@
     "template": {
       "forceLanguage": "en"
     },
-    "version": "0.1.0",
+    "version": "0.2.0",
     "title": "Imagix - Api",
     "url": "https://imagix-api.herokuapp.com/api/v1"
   }
